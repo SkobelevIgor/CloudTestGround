@@ -15,6 +15,7 @@ import (
 
 func main() {
 	buildImage()
+
 }
 
 func buildImage() {
