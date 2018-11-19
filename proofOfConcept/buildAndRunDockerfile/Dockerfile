@@ -2,7 +2,7 @@ FROM golang:latest
 
 WORKDIR /go/src/app
 
-ADD main.go .
+ADD ./toBuild/main.go .
 
 RUN go build -o main . 
 

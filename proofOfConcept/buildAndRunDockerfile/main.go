@@ -1,23 +1,19 @@
 package main
 
 import (
-	"archive/tar"
-	"bytes"
 	"context"
+	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"os"
 
 	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
+	"github.com/docker/docker/pkg/archive"
 )
 
 func main() {
-	buildImage()
-}
-
-func buildImage() {
 
 	ctx := context.Background()
 	cli, err := client.NewEnvClient()
@@ -25,40 +21,24 @@ func buildImage() {
 		panic(err)
 	}
 
-	buf := new(bytes.Buffer)
-	tw := tar.NewWriter(buf)
-	defer tw.Close()
+	buildImage(ctx, cli, "test")
+	id := runImage(ctx, cli, "test")
 
-	dockerFile := "Dockerfile"
-	dockerFileReader, err := os.Open("./toBuild/Dockerfile")
-	if err != nil {
-		log.Fatal(err, " :unable to open Dockerfile")
-	}
-	readDockerFile, err := ioutil.ReadAll(dockerFileReader)
-	if err != nil {
-		log.Fatal(err, " :unable to read dockerfile")
-	}
+	fmt.Println(id)
+}
 
-	tarHeader := &tar.Header{
-		Name: dockerFile,
-		Size: int64(len(readDockerFile)),
-	}
-	err = tw.WriteHeader(tarHeader)
-	if err != nil {
-		log.Fatal(err, " :unable to write tar header")
-	}
-	_, err = tw.Write(readDockerFile)
-	if err != nil {
-		log.Fatal(err, " :unable to write tar body")
-	}
-	dockerFileTarReader := bytes.NewReader(buf.Bytes())
+func getContext(filePath string) io.Reader {
+	ctx, _ := archive.TarWithOptions(filePath, &archive.TarOptions{})
+	return ctx
+}
 
+func buildImage(ctx context.Context, cli *client.Client, imageTag string) {
 	imageBuildResponse, err := cli.ImageBuild(
 		ctx,
-		dockerFileTarReader,
+		getContext("."),
 		types.ImageBuildOptions{
-			Context:    dockerFileTarReader,
-			Dockerfile: dockerFile,
+			Tags:       []string{imageTag},
+			Dockerfile: "Dockerfile",
 			Remove:     true})
 	if err != nil {
 		log.Fatal(err, " :unable to build docker image")
@@ -68,5 +48,20 @@ func buildImage() {
 	if err != nil {
 		log.Fatal(err, " :unable to read image build response")
 	}
+}
 
+func runImage(ctx context.Context, cli *client.Client, imageTag string) string {
+	resp, err := cli.ContainerCreate(ctx, &container.Config{
+		Image: imageTag,
+		Tty:   false,
+	}, nil, nil, "")
+	if err != nil {
+		panic(err)
+	}
+
+	if err := cli.ContainerStart(ctx, resp.ID, types.ContainerStartOptions{}); err != nil {
+		panic(err)
+	}
+
+	return resp.ID
 }
