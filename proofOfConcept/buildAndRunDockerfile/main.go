@@ -21,10 +21,26 @@ func main() {
 		panic(err)
 	}
 
-	buildImage(ctx, cli, "test")
-	id := runImage(ctx, cli, "test")
+	containerInfo(ctx, cli, "test")
 
-	fmt.Println(id)
+	// buildImage(ctx, cli, "test")
+	// id := runImage(ctx, cli, "test")
+
+	// fmt.Println(id)
+}
+
+func containerInfo(ctx context.Context, cli *client.Client, imageTag string) {
+
+	cl, err := cli.ContainerList(ctx, types.ContainerListOptions{})
+	if err != nil {
+		panic(err)
+	}
+
+	for _, ctr := range cl {
+		fmt.Println(ctr.Image)
+		fmt.Println("\n ------------------------------------------- ")
+	}
+
 }
 
 func getContext(filePath string) io.Reader {
@@ -64,4 +80,12 @@ func runImage(ctx context.Context, cli *client.Client, imageTag string) string {
 	}
 
 	return resp.ID
+}
+
+func removePreviousContainers(imageTag string) {
+
+}
+
+func removePreviousImages(imageTag string) {
+
 }
