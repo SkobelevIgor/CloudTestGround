@@ -23,13 +23,11 @@ func main() {
 
 	cDel := containersToDelete(ctx, cli, "test")
 	deleteContainers(ctx, cli, cDel)
-	// iDel := imagesToDelete(ctx, cli, "test")
-	// deleteImages(iDel)
+	iDel := imagesToDelete(ctx, cli, "test")
+	deleteImages(ctx, cli, iDel)
 
-	// buildImage(ctx, cli, "test")
-	// id := runImage(ctx, cli, "test")
-
-	// fmt.Println(id)
+	buildImage(ctx, cli, "test")
+	runImage(ctx, cli, "test")
 }
 
 func containersToDelete(ctx context.Context, cli *client.Client, imageTag string) []string {
@@ -51,13 +49,11 @@ func containersToDelete(ctx context.Context, cli *client.Client, imageTag string
 func imagesToDelete(ctx context.Context, cli *client.Client, imageTag string) []string {
 
 	images, err := cli.ImageList(ctx, types.ImageListOptions{})
-
 	if err != nil {
 		panic(err)
 	}
 
 	var iIds []string
-
 	for _, img := range images {
 		for _, tag := range img.RepoTags {
 			if tag == imageTag+":latest" {
@@ -81,9 +77,16 @@ func deleteContainers(ctx context.Context, cli *client.Client, cIds []string) (s
 	return status
 }
 
-// func deleteImages(iIds []string) (st bool) {
-
-// }
+func deleteImages(ctx context.Context, cli *client.Client, iIds []string) (st bool) {
+	status := true
+	for _, iID := range iIds {
+		_, err := cli.ImageRemove(ctx, iID, types.ImageRemoveOptions{})
+		if err != nil {
+			status = false
+		}
+	}
+	return status
+}
 
 func getContext(filePath string) io.Reader {
 	ctx, _ := archive.TarWithOptions(filePath, &archive.TarOptions{})
@@ -123,12 +126,4 @@ func runImage(ctx context.Context, cli *client.Client, imageTag string) string {
 	}
 
 	return resp.ID
-}
-
-func removePreviousContainers(imageTag string) {
-
-}
-
-func removePreviousImages(imageTag string) {
-
 }
