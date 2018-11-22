@@ -2,7 +2,10 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"log"
+
+	b64 "encoding/base64"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -28,6 +31,12 @@ func createAndRunInstance() {
 	amiID := "ami-01bbe152bf19d0289"
 	secGroup := "sg-c7b8e1be"
 
+	f, err := ioutil.ReadFile("./ec2Init.sh")
+	if err != nil {
+		panic(err)
+	}
+	b64script := string(f)
+
 	runResult, err := svc.RunInstances(&ec2.RunInstancesInput{
 		BlockDeviceMappings: []*ec2.BlockDeviceMapping{
 			{
@@ -35,7 +44,7 @@ func createAndRunInstance() {
 				Ebs: &ec2.EbsBlockDevice{
 					DeleteOnTermination: aws.Bool(true),
 					VolumeType:          aws.String("gp2"),
-					VolumeSize:          aws.Int64(10),
+					VolumeSize:          aws.Int64(8),
 				},
 			},
 		},
@@ -45,6 +54,7 @@ func createAndRunInstance() {
 		MinCount:         aws.Int64(1),
 		MaxCount:         aws.Int64(1),
 		SecurityGroupIds: []*string{aws.String(secGroup)},
+		UserData:         aws.String(b64.StdEncoding.EncodeToString([]byte(b64script))),
 	})
 
 	if err != nil {
