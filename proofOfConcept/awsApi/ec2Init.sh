@@ -11,13 +11,15 @@ export GOBIN=~/bin
 
 go install server.go
 
+chmod u+x $GOBIN/server
+
 cat << EOF >> /lib/systemd/system/server-agent.service
 [Unit]
 Description=server-agent
 
 [Service]
 Type=simple
-Restart=always
+Restart=on-failure
 RestartSec=5s
 ExecStart=$GOBIN/server
 
@@ -25,8 +27,7 @@ ExecStart=$GOBIN/server
 WantedBy=multi-user.target
 EOF
 
-service server-agent start
-service server-agent enable
-
+systemctl start server-agent
+systemctl enable server-agent
 
 
