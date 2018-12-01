@@ -1,8 +1,16 @@
 #!/bin/bash
 
+yum update -y
+
+amazon-linux-extras install docker
+usermod -a -G docker ec2-user
+
+systemctl start docker
+systemctl enable docker
+
 wget https://raw.githubusercontent.com/SkobelevIgor/CloudTestGround/dev/proofOfConcept/awsApi/server/server.go
 
-sudo yum install -y go
+yum install -y go git
 
 echo "export GOPATH=~" >> ~/.bash_profile
 echo "export GOBIN=~/bin" >> ~/.bash_profile
